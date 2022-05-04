@@ -19,7 +19,16 @@
       <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
     </div>
 
-    <div class="card-footer text-muted"></div>
+    <div class="card-footer text-muted">
+      <form action="/urls/update/<%= shortURL %>" method="post">
+        <h3 class="text-muted">Edit</h3>
+
+        <div class="form-group mb-2 form-inline justify-content-center">
+          <input type="text" name="longURL" class="form-control" placeholder="http://" style="width: 300px; margin: 1rem;">
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Bootstrap JS -->
