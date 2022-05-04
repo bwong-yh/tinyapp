@@ -39,8 +39,12 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
-  res.render("urls_new", templateVars);
+  if (!users[req.cookies.user_id]) {
+    res.redirect("/login");
+  } else {
+    const templateVars = { user: users[req.cookies.user_id] };
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -65,6 +69,14 @@ const generateRandomString = (length = 6) => {
 };
 
 // functions to check existing email & password
+const checkExistedId = userId => {
+  for (let user in users) {
+    if (user === userId) return true;
+  }
+
+  return false;
+};
+
 const checkExistedEmail = email => {
   for (let user in users) {
     if (users[user].email === email) return user;
@@ -125,11 +137,18 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  const longURL = req.body.longURL;
+  const id = req.cookies.user_id;
 
-  urlDatabase[shortURL] = longURL;
-  res.redirect("/urls");
+  if (checkExistedId(id)) {
+    const shortURL = generateRandomString();
+    const longURL = req.body.longURL;
+
+    urlDatabase[shortURL] = longURL;
+    res.redirect("/urls");
+  } else {
+    const templateVars = { statusCode: "401 Unauthorized", message: "You are not authorized!" };
+    res.status(401).render("error", templateVars);
+  }
 });
 
 app.post("/urls/delete/:shortURL", (req, res) => {
