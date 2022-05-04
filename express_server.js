@@ -56,10 +56,29 @@ const generateRandomString = (length = 6) => {
   return randomString;
 };
 
+// function to check existing email
+const checkExistedEmail = email => {
+  for (let user in users) {
+    if (users[user].email === email) return true;
+  }
+
+  return false;
+};
+
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+
+  if (!email || !password) {
+    const templateVars = { statusCode: 400, message: "You've sent a bad request. Please check your email and password =(." };
+    res.status(400).render("error", templateVars);
+  }
+
+  if (checkExistedEmail(email)) {
+    const templateVars = { statusCode: 400, message: "You've sent a bad request. Email is already registered =(." };
+    res.status(400).render("error", templateVars);
+  }
 
   users[id] = { id, email, password };
   res.cookie("user_id", id);
