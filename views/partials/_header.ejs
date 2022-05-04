@@ -15,7 +15,7 @@
 
     <% if (username) { %>
     <form action="/logout" method="post" class="form-inline">
-      <h4><%= username %></h4>
+      <h4><span class="lead">Hello, </span><%= username %></h4>
       <button type="submit" class="btn btn-light ml-3">Logout</button>
     </form>
     <% } else { %>
