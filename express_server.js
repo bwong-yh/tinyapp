@@ -21,6 +21,10 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
@@ -56,10 +60,18 @@ const generateRandomString = (length = 6) => {
   return randomString;
 };
 
-// function to check existing email
+// functions to check existing email & password
 const checkExistedEmail = email => {
   for (let user in users) {
-    if (users[user].email === email) return true;
+    if (users[user].email === email) return user;
+  }
+
+  return false;
+};
+
+const checkExistedPassword = password => {
+  for (let user in users) {
+    if (users[user].password === password) return user;
   }
 
   return false;
@@ -71,12 +83,12 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
 
   if (!email || !password) {
-    const templateVars = { statusCode: 400, message: "You've sent a bad request. Please check your email and password =(." };
+    const templateVars = { statusCode: "400 Bad Request", message: "Please check your email and password =(" };
     res.status(400).render("error", templateVars);
   }
 
   if (checkExistedEmail(email)) {
-    const templateVars = { statusCode: 400, message: "You've sent a bad request. Email is already registered =(." };
+    const templateVars = { statusCode: "400 Bad Request", message: "Email is already registered =(" };
     res.status(400).render("error", templateVars);
   }
 
@@ -85,7 +97,23 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/login", (req, res) => {});
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!checkExistedEmail(email)) {
+    const templateVars = { statusCode: "403 Forbidden", message: "Email cannot be found =(" };
+    res.status(403).render("error", templateVars);
+  }
+
+  if (checkExistedEmail(email) !== checkExistedPassword(password)) {
+    const templateVars = { statusCode: "403 Forbidden", message: "Email and password do not match =(" };
+    res.status(403).render("error", templateVars);
+  } else if (checkExistedEmail(email) === checkExistedPassword(password)) {
+    res.cookie("user_id", checkExistedEmail(email));
+    res.redirect("/urls");
+  }
+});
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();

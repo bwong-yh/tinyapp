@@ -19,9 +19,11 @@
       <button type="submit" class="btn btn-light ml-3">Logout</button>
     </form>
     <% } else { %>
-    <form action="/login" method="post" class="form-inline">
-      <input type="text" name="username" class="form-control mr-3" placeholder="username">
+    <form action="/login" method="get" class="form-inline">
       <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+    <form action="/register" method="get" class="form-inline ml-3">
+      <button type="submit" class="btn btn-primary">Register</button>
     </form>
     <% } %>
   </nav>
