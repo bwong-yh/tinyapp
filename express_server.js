@@ -115,6 +115,11 @@ app.post("/login", (req, res) => {
   }
 });
 
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id");
+  res.redirect("/urls");
+});
+
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
@@ -134,16 +139,6 @@ app.post("/urls/edit/:shortURL", (req, res) => {
 
 app.post("/urls/update/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.longURL;
-  res.redirect("/urls");
-});
-
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
-});
-
-app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
