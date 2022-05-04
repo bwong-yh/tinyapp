@@ -12,7 +12,25 @@
 </head>
 
 <body>
+  <div class="container" style="width: 30rem; margin-top: 2.5rem;">
+    <h3 class="text-success">Registration Form</h3>
 
+    <form action="/register" method="post" class="border border-success rounded mt-3 p-4">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" name="email" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" name="password" class="form-control">
+      </div>
+
+      <p class="font-weight-light">* By registering, I agree to the Terms of Use and Privacy Policy.</p>
+
+      <button type="submit" class="btn btn-success btn-lg btn-block">Register!</button>
+    </form>
+  </div>
 
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
