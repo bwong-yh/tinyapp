@@ -1,7 +1,7 @@
 // database
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  // b2xVn2: "http://www.lighthouselabs.ca",
+  // "9sm5xK": "http://www.google.com",
 };
 
 const users = {};
@@ -48,12 +48,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  res.redirect(urlDatabase[req.params.shortURL]);
+  res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
 // function to generate new shortURLs and userIds
@@ -137,13 +137,12 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const id = req.cookies.user_id;
-
-  if (checkExistedId(id)) {
+  if (checkExistedId(req.cookies.user_id)) {
+    const userId = req.cookies.user_id;
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
 
-    urlDatabase[shortURL] = longURL;
+    urlDatabase[shortURL] = { longURL, userId };
     res.redirect("/urls");
   } else {
     const templateVars = { statusCode: "401 Unauthorized", message: "You are not authorized!" };
@@ -161,7 +160,7 @@ app.post("/urls/edit/:shortURL", (req, res) => {
 });
 
 app.post("/urls/update/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
