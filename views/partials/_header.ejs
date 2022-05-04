@@ -13,9 +13,16 @@
       </div>
     </div>
 
+    <% if (username) { %>
+    <form action="/logout" method="post" class="form-inline">
+      <h4><%= username %></h4>
+      <button type="submit" class="btn btn-light ml-3">Logout</button>
+    </form>
+    <% } else { %>
     <form action="/login" method="post" class="form-inline">
       <input type="text" name="username" class="form-control mr-3" placeholder="username">
       <button type="submit" class="btn btn-primary">Login</button>
     </form>
+    <% } %>
   </nav>
 </header>
