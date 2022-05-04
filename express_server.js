@@ -17,11 +17,19 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.redirect("/login");
+});
+
 app.get("/register", (req, res) => {
+  if (req.cookies.user_id) res.redirect("/urls");
+
   res.render("register");
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies.user_id) res.redirect("/urls");
+
   res.render("login");
 });
 
@@ -42,10 +50,6 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
-});
-
-app.get("/", (req, res) => {
-  res.send("hello!");
 });
 
 // function to generate new shortURLs and userIds
