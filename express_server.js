@@ -15,6 +15,10 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies.username };
   console.log(templateVars);
