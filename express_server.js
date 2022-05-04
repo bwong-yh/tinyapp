@@ -6,12 +6,14 @@ const urlDatabase = {
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
