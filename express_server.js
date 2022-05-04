@@ -4,6 +4,8 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+const users = {};
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -21,7 +23,6 @@ app.get("/register", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies.username };
-  console.log(templateVars);
   res.render("urls_index", templateVars);
 });
 
@@ -43,7 +44,7 @@ app.get("/", (req, res) => {
   res.send("hello!");
 });
 
-// function to generate new shortURL
+// function to generate new shortURLs and userIds
 const generateRandomString = (length = 6) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let randomString = "";
@@ -54,6 +55,16 @@ const generateRandomString = (length = 6) => {
 
   return randomString;
 };
+
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  users[id] = { id, email, password };
+  res.cookie("user_id", id);
+  res.redirect("/urls");
+});
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
