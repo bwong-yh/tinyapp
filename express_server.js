@@ -11,6 +11,12 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  console.log(templateVars);
+  res.render("urls_index", templateVars);
+});
+
 app.get("/", (req, res) => {
   res.send("hello!");
 });
