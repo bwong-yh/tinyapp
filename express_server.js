@@ -1,6 +1,6 @@
-// database
+// DATABASE
 const urlDatabase = {
-  // b2xVn2: "http://www.lighthouselabs.ca",
+  b2xVn2: { longURL: "http://www.lighthouselabs.ca", userId: "9sm5xK" },
   // "9sm5xK": "http://www.google.com",
 };
 
@@ -17,6 +17,8 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// FUNCTIONS
+// match userId to urls & return urls that the userId owns
 const urlsForUser = userId => {
   const urlsList = {};
 
@@ -27,33 +29,42 @@ const urlsForUser = userId => {
   return urlsList;
 };
 
+// check for exitsed urls
+const checkExistedUrls = shortURL => {
+  for (let url in urlDatabase) {
+    if (url === shortURL) return true;
+  }
+
+  return false;
+};
+
+// check if urls belong to userId
+const checkIsOwner = (userId, shortURL) => {
+  if (urlDatabase[shortURL].userId === userId) return true;
+
+  return false;
+};
+
+// SERVER ENDPOINTS
 app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies.user_id) res.redirect("/urls");
-
-  res.render("register");
+  req.cookies.user_id ? res.redirect("/urls") : res.render("register");
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies.user_id) res.redirect("/urls");
-
-  res.render("login");
+  req.cookies.user_id ? res.redirect("/urls") : res.render("login");
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.cookies.user_id) {
-    const templateVars = { statusCode: "401 Unauthorized", message: "Please log in to continue" };
-    res.status(401).render("error", templateVars);
-  } else {
-    const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
-    res.render("urls_index", templateVars);
-  }
+  const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
+  res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  // allow only registered users (in users obj) to access
   if (!users[req.cookies.user_id]) {
     res.redirect("/login");
   } else {
@@ -63,9 +74,18 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  if (!req.cookies.user_id) {
+  const userId = req.cookies.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (!userId) {
     const templateVars = { statusCode: "401 Unauthorized", message: "Please log in to continue" };
     res.status(401).render("error", templateVars);
+  } else if (!checkExistedUrls(shortURL)) {
+    const templateVars = { statusCode: "400 Bad Request", message: "Please check ShortURL" };
+    res.status(400).render("error", templateVars);
+  } else if (!checkIsOwner(userId, shortURL)) {
+    const templateVars = { statusCode: "400 Bad Request", message: "You are not the owner" };
+    res.status(400).render("error", templateVars);
   } else {
     const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
     res.render("urls_show", templateVars);
@@ -169,12 +189,6 @@ app.post("/urls", (req, res) => {
     res.status(401).render("error", templateVars);
   }
 });
-
-const checkIsOwner = (userId, shortURL) => {
-  if (urlDatabase[shortURL].userId === userId) return true;
-
-  return false;
-};
 
 app.post("/urls/delete/:shortURL", (req, res) => {
   if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
