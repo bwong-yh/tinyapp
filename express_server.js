@@ -83,7 +83,9 @@ app.post("/register", (req, res) => {
   if (checkExistedEmail(email, users)) {
     renderErrorPage(res, 400, "Email is already registered");
   } else {
-    users[id] = { id, email, password };
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    users[id] = { id, email, hashedPassword };
     res.cookie("user_id", id);
     res.redirect("/urls");
   }

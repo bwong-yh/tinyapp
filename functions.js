@@ -1,4 +1,7 @@
 // FUNCTIONS
+
+const bcrypt = require("bcryptjs/dist/bcrypt");
+
 // match userId to urls & return urls that the userId owns
 const urlsForUser = (userId, urlDatabase) => {
   const urlsList = {};
@@ -59,7 +62,7 @@ const checkExistedEmail = (email, users) => {
 // check if passowrd matches user
 const checkExistedPassword = (password, users) => {
   for (let user in users) {
-    if (users[user].password === password) return user;
+    if (bcrypt.compareSync(password, users[user].hashedPassword)) return user;
   }
 
   return false;
