@@ -12,8 +12,8 @@ const urlsForUser = (userId, urlDatabase) => {
   return urlsList;
 };
 
-// check for exitsed urls
-const checkExistedUrls = (shortURL, urlDatabase) => {
+// check for exitsed urls in database
+const checkExistedUrl = (shortURL, urlDatabase) => {
   for (let url in urlDatabase) {
     if (url === shortURL) return true;
   }
@@ -21,7 +21,7 @@ const checkExistedUrls = (shortURL, urlDatabase) => {
   return undefined;
 };
 
-// check if urls belong to userId
+// check if urls belong to userId (creator)
 const checkIsOwner = (userId, shortURL, urlDatabase) => {
   if (urlDatabase[shortURL].userId === userId) return true;
 
@@ -40,7 +40,7 @@ const generateRandomString = (length = 6) => {
   return randomString;
 };
 
-// check existing user
+// check existing user in database (users object)
 const checkExistedId = (userId, users) => {
   for (let user in users) {
     if (users[user].id === userId) return true;
@@ -73,4 +73,4 @@ const renderErrorPage = (res, status, message) => {
   res.status(status).render("error", templateVars);
 };
 
-module.exports = { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage };
+module.exports = { urlsForUser, checkExistedUrl, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage };

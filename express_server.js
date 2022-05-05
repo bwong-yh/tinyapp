@@ -7,7 +7,7 @@ const urlDatabase = {
 const users = {};
 
 // essential functions
-const { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./helpers");
+const { urlsForUser, checkExistedUrl, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./helpers");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -62,7 +62,7 @@ app.get("/urls/:shortURL", (req, res) => {
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
     renderErrorPage(res, 401, "Please log in to continue");
-  } else if (!checkExistedUrls(shortURL, urlDatabase)) {
+  } else if (!checkExistedUrl(shortURL, urlDatabase)) {
     renderErrorPage(res, 400, "Please check ShortURL");
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
