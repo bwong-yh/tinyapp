@@ -17,6 +17,16 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const urlsForUser = userId => {
+  const urlsList = {};
+
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userId === userId) urlsList[url] = urlDatabase[url];
+  }
+
+  return urlsList;
+};
+
 app.get("/", (req, res) => {
   res.redirect("/login");
 });
@@ -34,8 +44,13 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
-  res.render("urls_index", templateVars);
+  if (!req.cookies.user_id) {
+    const templateVars = { statusCode: "401 Unauthorized", message: "Please log in to continue" };
+    res.status(401).render("error", templateVars);
+  } else {
+    const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
@@ -48,8 +63,13 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
-  res.render("urls_show", templateVars);
+  if (!req.cookies.user_id) {
+    const templateVars = { statusCode: "401 Unauthorized", message: "Please log in to continue" };
+    res.status(401).render("error", templateVars);
+  } else {
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
