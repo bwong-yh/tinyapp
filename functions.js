@@ -1,7 +1,6 @@
-// FUNCTIONS
-
 const bcrypt = require("bcryptjs/dist/bcrypt");
 
+// FUNCTIONS
 // match userId to urls & return urls that the userId owns
 const urlsForUser = (userId, urlDatabase) => {
   const urlsList = {};

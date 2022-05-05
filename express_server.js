@@ -11,7 +11,7 @@ const { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, check
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 
 const app = express();
@@ -19,7 +19,12 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["secretKey1", "secretKey2", "secretKey3"],
+  })
+);
 
 // SERVER ENDPOINTS
 app.get("/", (req, res) => {
@@ -27,30 +32,30 @@ app.get("/", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  req.cookies.user_id ? res.redirect("/urls") : res.render("register");
+  req.session.user_id ? res.redirect("/urls") : res.render("register");
 });
 
 app.get("/login", (req, res) => {
-  req.cookies.user_id ? res.redirect("/urls") : res.render("login");
+  req.session.user_id ? res.redirect("/urls") : res.render("login");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.cookies.user_id, urlDatabase), user: users[req.cookies.user_id] };
+  const templateVars = { urls: urlsForUser(req.session.user_id, urlDatabase), user: users[req.session.user_id] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   // allow only registered users (in users obj) to access
-  if (!users[req.cookies.user_id]) {
+  if (!users[req.session.user_id]) {
     res.redirect("/login");
   } else {
-    const templateVars = { user: users[req.cookies.user_id] };
+    const templateVars = { user: users[req.session.user_id] };
     res.render("urls_new", templateVars);
   }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
@@ -61,7 +66,7 @@ app.get("/urls/:shortURL", (req, res) => {
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
   } else {
-    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
     res.render("urls_show", templateVars);
   }
 });
@@ -86,7 +91,7 @@ app.post("/register", (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     users[id] = { id, email, hashedPassword };
-    res.cookie("user_id", id);
+    req.session.user_id = id;
     res.redirect("/urls");
   }
 });
@@ -101,7 +106,8 @@ app.post("/login", (req, res) => {
 
   // allow logging in ONLY if both functions return the same userId
   if (checkExistedEmail(email, users) === checkExistedPassword(password, users)) {
-    res.cookie("user_id", checkExistedEmail(email, users));
+    // res.cookie("user_id", checkExistedEmail(email, users));
+    req.session.user_id = checkExistedEmail(email, users);
     res.redirect("/urls");
   } else {
     renderErrorPage(res, 403, "Email and password do not match");
@@ -109,13 +115,13 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie("session");
   res.redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
-  if (checkExistedId(req.cookies.user_id, users)) {
-    const userId = req.cookies.user_id;
+  if (checkExistedId(req.session.user_id, users)) {
+    const userId = req.session.user_id;
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
 
@@ -128,7 +134,7 @@ app.post("/urls", (req, res) => {
 
 // delete, edit, and update routes have the same logic; ONLY user that created the URLs can perform either action
 app.post("/urls/delete/:shortURL", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
   if (checkIsOwner(userId, shortURL, urlDatabase)) {
@@ -140,7 +146,7 @@ app.post("/urls/delete/:shortURL", (req, res) => {
 });
 
 app.post("/urls/edit/:shortURL", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
   if (checkIsOwner(userId, shortURL, urlDatabase)) {
@@ -151,7 +157,7 @@ app.post("/urls/edit/:shortURL", (req, res) => {
 });
 
 app.post("/urls/update/:shortURL", (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
   if (checkIsOwner(userId, shortURL, urlDatabase)) {
