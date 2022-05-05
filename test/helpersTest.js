@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const { assert } = require("chai");
-const { urlsForUser, checkExistedUrl, checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
+const { urlsForUser, checkExistedUrl, checkIsOwner, checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
 
 const testUsers = {
   userRandomID: {
@@ -55,6 +55,20 @@ describe("checkExistedUrl", () => {
 
   it("should return undefined with an non-existent shortURL", () => {
     const actual = checkExistedUrl("NOTaShortURL", testUsers);
+    const expected = undefined;
+    assert.strictEqual(actual, expected);
+  });
+});
+
+describe("checkIsOwner", () => {
+  it("should return true with shortURL is created by user", () => {
+    const actual = checkIsOwner("userRandomID", "shortURL1", testUrls);
+    const expected = true;
+    assert.strictEqual(actual, expected);
+  });
+
+  it("should return undefined with shortURL is not created by user ", () => {
+    const actual = checkIsOwner("userRandomID", "shortURL2", testUrls);
     const expected = undefined;
     assert.strictEqual(actual, expected);
   });
