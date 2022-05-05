@@ -7,7 +7,7 @@ const urlDatabase = {
 const users = {};
 
 // essential functions
-const { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./functions");
+const { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./helpers");
 
 const express = require("express");
 const bodyParser = require("body-parser");
