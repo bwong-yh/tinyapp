@@ -23,7 +23,6 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secretKey1", "secretKey2", "secretKey3"],
-    signed: false,
   })
 );
 
@@ -114,7 +113,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("session");
+  req.session = null;
   res.redirect("/urls");
 });
 
