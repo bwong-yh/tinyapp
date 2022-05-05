@@ -119,6 +119,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  // only registered userId can access to this endpoint
   if (checkExistedId(req.session.user_id, users)) {
     const userId = req.session.user_id;
     const shortURL = generateRandomString();

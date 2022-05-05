@@ -43,7 +43,7 @@ const generateRandomString = (length = 6) => {
 // check existing user
 const checkExistedId = (userId, users) => {
   for (let user in users) {
-    if (user === userId) return true;
+    if (users[user].id === userId) return true;
   }
 
   return undefined;

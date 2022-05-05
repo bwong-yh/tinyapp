@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const { assert } = require("chai");
-const { checkExistedEmail, checkExistedPassword } = require("../helpers");
+const { checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
 
 const testUsers = {
   userRandomID: {
@@ -15,6 +15,31 @@ const testUsers = {
     password: "dishwasher-funk",
   },
 };
+
+const testUrls = {
+  shortURL1: {
+    longURL: "http://www.facebook.com",
+    userId: "userRandomID",
+  },
+  shortURL2: {
+    longURL: "http://www.google.com",
+    userId: "user2RandomID",
+  },
+};
+
+describe("checkExistedId", () => {
+  it("should return true with a registered user", () => {
+    const actual = checkExistedId("userRandomID", testUsers);
+    const expected = true;
+    assert.strictEqual(actual, expected);
+  });
+
+  it("should return undefined with unregistered user", () => {
+    const actual = checkExistedId("user99@example.com", testUsers);
+    const expected = undefined;
+    assert.strictEqual(actual, expected);
+  });
+});
 
 describe("checkExistedEmail", () => {
   it("should return a user with valid email", () => {
