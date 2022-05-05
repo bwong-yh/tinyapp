@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const { assert } = require("chai");
-const { checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
+const { urlsForUser, checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
 
 const testUsers = {
   userRandomID: {
@@ -26,6 +26,25 @@ const testUrls = {
     userId: "user2RandomID",
   },
 };
+
+describe("urlsForUser", () => {
+  it("should return the URLs that are created by user", () => {
+    const actual = urlsForUser("userRandomID", testUrls);
+    const expected = {
+      shortURL1: {
+        longURL: "http://www.facebook.com",
+        userId: "userRandomID",
+      },
+    };
+    assert.deepEqual(actual, expected);
+  });
+
+  it("should return an empty {} if no URLs match user", () => {
+    const actual = urlsForUser("awesomeUser", testUrls);
+    const expected = {};
+    assert.deepEqual(actual, expected);
+  });
+});
 
 describe("checkExistedId", () => {
   it("should return true with a registered user", () => {
