@@ -18,14 +18,14 @@ const checkExistedUrls = (shortURL, urlDatabase) => {
     if (url === shortURL) return true;
   }
 
-  return false;
+  return undefined;
 };
 
 // check if urls belong to userId
 const checkIsOwner = (userId, shortURL, urlDatabase) => {
   if (urlDatabase[shortURL].userId === userId) return true;
 
-  return false;
+  return undefined;
 };
 
 // generate new shortURLs and userIds
@@ -46,25 +46,25 @@ const checkExistedId = (userId, users) => {
     if (user === userId) return true;
   }
 
-  return false;
+  return undefined;
 };
 
 // check existed registered email
 const checkExistedEmail = (email, users) => {
   for (let user in users) {
-    if (users[user].email === email) return user;
+    if (users[user].email === email) return users[user].id;
   }
 
-  return false;
+  return undefined;
 };
 
 // check if passowrd matches user
 const checkExistedPassword = (password, users) => {
   for (let user in users) {
-    if (bcrypt.compareSync(password, users[user].hashedPassword)) return user;
+    if (bcrypt.compareSync(password, users[user].password)) return users[user].id;
   }
 
-  return false;
+  return undefined;
 };
 
 // render error page with specific status and message

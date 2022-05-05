@@ -23,6 +23,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secretKey1", "secretKey2", "secretKey3"],
+    signed: false,
   })
 );
 
@@ -88,9 +89,7 @@ app.post("/register", (req, res) => {
   if (checkExistedEmail(email, users)) {
     renderErrorPage(res, 400, "Email is already registered");
   } else {
-    const hashedPassword = bcrypt.hashSync(password, 10);
-
-    users[id] = { id, email, hashedPassword };
+    users[id] = { id, email, password: bcrypt.hashSync(password, 10) };
     req.session.user_id = id;
     res.redirect("/urls");
   }
