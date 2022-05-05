@@ -6,6 +6,9 @@ const urlDatabase = {
 
 const users = {};
 
+// essential functions
+const { urlsForUser, checkExistedUrls, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./functions");
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -16,79 +19,6 @@ const PORT = 8080;
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// FUNCTIONS
-// match userId to urls & return urls that the userId owns
-const urlsForUser = userId => {
-  const urlsList = {};
-
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userId === userId) urlsList[url] = urlDatabase[url];
-  }
-
-  return urlsList;
-};
-
-// check for exitsed urls
-const checkExistedUrls = shortURL => {
-  for (let url in urlDatabase) {
-    if (url === shortURL) return true;
-  }
-
-  return false;
-};
-
-// check if urls belong to userId
-const checkIsOwner = (userId, shortURL) => {
-  if (urlDatabase[shortURL].userId === userId) return true;
-
-  return false;
-};
-
-// generate new shortURLs and userIds
-const generateRandomString = (length = 6) => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let randomString = "";
-
-  for (let i = 0; i < length; i++) {
-    randomString += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return randomString;
-};
-
-// check existing user
-const checkExistedId = userId => {
-  for (let user in users) {
-    if (user === userId) return true;
-  }
-
-  return false;
-};
-
-// check existed registered email
-const checkExistedEmail = email => {
-  for (let user in users) {
-    if (users[user].email === email) return user;
-  }
-
-  return false;
-};
-
-// check if passowrd matches user
-const checkExistedPassword = password => {
-  for (let user in users) {
-    if (users[user].password === password) return user;
-  }
-
-  return false;
-};
-
-// render error page with specific status and message
-const renderErrorPage = (res, status, message) => {
-  const templateVars = { status, message };
-  res.status(status).render("error", templateVars);
-};
 
 // SERVER ENDPOINTS
 app.get("/", (req, res) => {
@@ -104,7 +34,7 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.cookies.user_id), user: users[req.cookies.user_id] };
+  const templateVars = { urls: urlsForUser(req.cookies.user_id, urlDatabase), user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
@@ -125,9 +55,9 @@ app.get("/urls/:shortURL", (req, res) => {
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
     renderErrorPage(res, 401, "Please log in to continue");
-  } else if (!checkExistedUrls(shortURL)) {
+  } else if (!checkExistedUrls(shortURL, urlDatabase)) {
     renderErrorPage(res, 400, "Please check ShortURL");
-  } else if (!checkIsOwner(userId, shortURL)) {
+  } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
   } else {
     const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
@@ -149,7 +79,7 @@ app.post("/register", (req, res) => {
   }
 
   // allow registration if email is not in the databse (users obj)
-  if (checkExistedEmail(email)) {
+  if (checkExistedEmail(email, users)) {
     renderErrorPage(res, 400, "Email is already registered");
   } else {
     users[id] = { id, email, password };
@@ -162,13 +92,13 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if (!checkExistedEmail(email)) {
+  if (!checkExistedEmail(email, users)) {
     renderErrorPage(res, 403, "Email cannot be found");
   }
 
   // allow logging in ONLY if both functions return the same userId
-  if (checkExistedEmail(email) === checkExistedPassword(password)) {
-    res.cookie("user_id", checkExistedEmail(email));
+  if (checkExistedEmail(email, users) === checkExistedPassword(password, users)) {
+    res.cookie("user_id", checkExistedEmail(email, users));
     res.redirect("/urls");
   } else {
     renderErrorPage(res, 403, "Email and password do not match");
@@ -181,7 +111,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  if (checkExistedId(req.cookies.user_id)) {
+  if (checkExistedId(req.cookies.user_id, users)) {
     const userId = req.cookies.user_id;
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
@@ -195,7 +125,10 @@ app.post("/urls", (req, res) => {
 
 // delete, edit, and update routes have the same logic; ONLY user that created the URLs can perform either action
 app.post("/urls/delete/:shortURL", (req, res) => {
-  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+  const userId = req.cookies.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (checkIsOwner(userId, shortURL, urlDatabase)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
@@ -204,7 +137,10 @@ app.post("/urls/delete/:shortURL", (req, res) => {
 });
 
 app.post("/urls/edit/:shortURL", (req, res) => {
-  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+  const userId = req.cookies.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (checkIsOwner(userId, shortURL, urlDatabase)) {
     res.redirect(`/urls/${req.params.shortURL}`);
   } else {
     renderErrorPage(res, 403, "You are not the owner");
@@ -212,7 +148,10 @@ app.post("/urls/edit/:shortURL", (req, res) => {
 });
 
 app.post("/urls/update/:shortURL", (req, res) => {
-  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+  const userId = req.cookies.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (checkIsOwner(userId, shortURL, urlDatabase)) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
