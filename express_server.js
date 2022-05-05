@@ -45,6 +45,51 @@ const checkIsOwner = (userId, shortURL) => {
   return false;
 };
 
+// generate new shortURLs and userIds
+const generateRandomString = (length = 6) => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let randomString = "";
+
+  for (let i = 0; i < length; i++) {
+    randomString += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return randomString;
+};
+
+// check existing user
+const checkExistedId = userId => {
+  for (let user in users) {
+    if (user === userId) return true;
+  }
+
+  return false;
+};
+
+// check existed registered email
+const checkExistedEmail = email => {
+  for (let user in users) {
+    if (users[user].email === email) return user;
+  }
+
+  return false;
+};
+
+// check if passowrd matches user
+const checkExistedPassword = password => {
+  for (let user in users) {
+    if (users[user].password === password) return user;
+  }
+
+  return false;
+};
+
+// render error page with specific status and message
+const renderErrorPage = (res, status, message) => {
+  const templateVars = { status, message };
+  res.status(status).render("error", templateVars);
+};
+
 // SERVER ENDPOINTS
 app.get("/", (req, res) => {
   res.redirect("/login");
@@ -77,15 +122,13 @@ app.get("/urls/:shortURL", (req, res) => {
   const userId = req.cookies.user_id;
   const shortURL = req.params.shortURL;
 
+  // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
-    const templateVars = { statusCode: "401 Unauthorized", message: "Please log in to continue" };
-    res.status(401).render("error", templateVars);
+    renderErrorPage(res, 401, "Please log in to continue");
   } else if (!checkExistedUrls(shortURL)) {
-    const templateVars = { statusCode: "400 Bad Request", message: "Please check ShortURL" };
-    res.status(400).render("error", templateVars);
+    renderErrorPage(res, 400, "Please check ShortURL");
   } else if (!checkIsOwner(userId, shortURL)) {
-    const templateVars = { statusCode: "400 Bad Request", message: "You are not the owner" };
-    res.status(400).render("error", templateVars);
+    renderErrorPage(res, 403, "You are not the owner");
   } else {
     const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
     res.render("urls_show", templateVars);
@@ -96,61 +139,23 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
-// function to generate new shortURLs and userIds
-const generateRandomString = (length = 6) => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let randomString = "";
-
-  for (let i = 0; i < length; i++) {
-    randomString += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return randomString;
-};
-
-// functions to check existing email & password
-const checkExistedId = userId => {
-  for (let user in users) {
-    if (user === userId) return true;
-  }
-
-  return false;
-};
-
-const checkExistedEmail = email => {
-  for (let user in users) {
-    if (users[user].email === email) return user;
-  }
-
-  return false;
-};
-
-const checkExistedPassword = password => {
-  for (let user in users) {
-    if (users[user].password === password) return user;
-  }
-
-  return false;
-};
-
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
 
   if (!email || !password) {
-    const templateVars = { statusCode: "400 Bad Request", message: "Please check your email and password =(" };
-    res.status(400).render("error", templateVars);
+    renderErrorPage(res, 400, "Please check your email and password");
   }
 
+  // allow registration if email is not in the databse (users obj)
   if (checkExistedEmail(email)) {
-    const templateVars = { statusCode: "400 Bad Request", message: "Email is already registered =(" };
-    res.status(400).render("error", templateVars);
+    renderErrorPage(res, 400, "Email is already registered");
+  } else {
+    users[id] = { id, email, password };
+    res.cookie("user_id", id);
+    res.redirect("/urls");
   }
-
-  users[id] = { id, email, password };
-  res.cookie("user_id", id);
-  res.redirect("/urls");
 });
 
 app.post("/login", (req, res) => {
@@ -158,16 +163,15 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
 
   if (!checkExistedEmail(email)) {
-    const templateVars = { statusCode: "403 Forbidden", message: "Email cannot be found =(" };
-    res.status(403).render("error", templateVars);
+    renderErrorPage(res, 403, "Email cannot be found");
   }
 
-  if (checkExistedEmail(email) !== checkExistedPassword(password)) {
-    const templateVars = { statusCode: "403 Forbidden", message: "Email and password do not match =(" };
-    res.status(403).render("error", templateVars);
-  } else if (checkExistedEmail(email) === checkExistedPassword(password)) {
+  // allow logging in ONLY if both functions return the same userId
+  if (checkExistedEmail(email) === checkExistedPassword(password)) {
     res.cookie("user_id", checkExistedEmail(email));
     res.redirect("/urls");
+  } else {
+    renderErrorPage(res, 403, "Email and password do not match");
   }
 });
 
@@ -185,18 +189,17 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = { longURL, userId };
     res.redirect("/urls");
   } else {
-    const templateVars = { statusCode: "401 Unauthorized", message: "You are not authorized!" };
-    res.status(401).render("error", templateVars);
+    renderErrorPage(res, 401, "You are unauthorized!");
   }
 });
 
+// delete, edit, and update routes have the same logic; ONLY user that created the URLs can perform either action
 app.post("/urls/delete/:shortURL", (req, res) => {
   if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
-    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
-    res.status(403).render("error", templateVars);
+    renderErrorPage(res, 403, "You are not the owner");
   }
 });
 
@@ -204,8 +207,7 @@ app.post("/urls/edit/:shortURL", (req, res) => {
   if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
     res.redirect(`/urls/${req.params.shortURL}`);
   } else {
-    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
-    res.status(403).render("error", templateVars);
+    renderErrorPage(res, 403, "You are not the owner");
   }
 });
 
@@ -214,8 +216,7 @@ app.post("/urls/update/:shortURL", (req, res) => {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
-    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
-    res.status(403).render("error", templateVars);
+    renderErrorPage(res, 403, "You are not the owner");
   }
 });
 
