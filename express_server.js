@@ -170,18 +170,39 @@ app.post("/urls", (req, res) => {
   }
 });
 
+const checkIsOwner = (userId, shortURL) => {
+  if (urlDatabase[shortURL].userId === userId) return true;
+
+  return false;
+};
+
 app.post("/urls/delete/:shortURL", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
+    res.status(403).render("error", templateVars);
+  }
 });
 
 app.post("/urls/edit/:shortURL", (req, res) => {
-  res.redirect(`/urls/${req.params.shortURL}`);
+  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+    res.redirect(`/urls/${req.params.shortURL}`);
+  } else {
+    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
+    res.status(403).render("error", templateVars);
+  }
 });
 
 app.post("/urls/update/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  res.redirect("/urls");
+  if (checkIsOwner(req.cookies.user_id, req.params.shortURL)) {
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    const templateVars = { statusCode: "403 Forbidden", message: "You are not the owner!" };
+    res.status(403).render("error", templateVars);
+  }
 });
 
 app.listen(PORT, () => {
