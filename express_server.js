@@ -11,6 +11,7 @@ const { urlsForUser, checkExistedUrl, checkIsOwner, generateRandomString, checkE
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const methodOverride = require("method-override");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 
@@ -19,6 +20,7 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
 app.use(
   cookieSession({
     name: "session",
@@ -132,7 +134,7 @@ app.post("/urls", (req, res) => {
 });
 
 // delete, edit, and update routes have the same logic; ONLY user that created the URLs can perform either action
-app.post("/urls/delete/:shortURL", (req, res) => {
+app.delete("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
@@ -144,7 +146,7 @@ app.post("/urls/delete/:shortURL", (req, res) => {
   }
 });
 
-app.post("/urls/edit/:shortURL", (req, res) => {
+app.put("/urls/:shortURL/edit", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
@@ -155,7 +157,7 @@ app.post("/urls/edit/:shortURL", (req, res) => {
   }
 });
 
-app.post("/urls/update/:shortURL", (req, res) => {
+app.put("/urls/:shortURL/update", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 

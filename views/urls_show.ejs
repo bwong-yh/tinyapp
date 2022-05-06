@@ -20,7 +20,7 @@
     </div>
 
     <div class="card-footer text-muted">
-      <form action="/urls/update/<%= shortURL %>" method="post">
+      <form action="/urls/<%= shortURL %>/update?_method=PUT" method="post">
         <h3 class="text-muted">Edit</h3>
 
         <div class="form-group mb-2 form-inline justify-content-center">

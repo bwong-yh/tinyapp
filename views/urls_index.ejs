@@ -32,12 +32,12 @@
           <td class="align-middle"><%= url %></td>
           <td class="align-middle"><%= urls[url].longURL %></td>
           <td>
-            <form action="urls/edit/<%= url %>" method="post">
+            <form action="urls/<%= url %>/edit?_method=PUT" method="post">
               <button type="submit" class="btn btn-outline-primary">Edit</button>
             </form>
           </td>
           <td>
-            <form action="urls/delete/<%= url %>" method="post">
+            <form action="urls/<%= url %>/delete?_method=DELETE" method="post">
               <button type="submit" class="btn btn-danger">DELETE</button>
             </form>
           </td>
