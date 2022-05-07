@@ -1,5 +1,4 @@
 const bcryptjs = require("bcryptjs");
-const bcrypt = require("bcryptjs/dist/bcrypt");
 const { assert } = require("chai");
 const { urlsForUser, checkExistedUrl, checkIsOwner, checkExistedId, checkExistedEmail, checkExistedPassword } = require("../helpers");
 
@@ -7,12 +6,12 @@ const testUsers = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcryptjs.hashSync("purple-monkey-dinosaur", 10),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcryptjs.hashSync("dishwasher-funk", 10),
   },
 };
 
@@ -104,7 +103,6 @@ describe("checkExistedEmail", () => {
 
 describe("checkExistedPassword", () => {
   it("should return a user with valid password", () => {
-    testUsers.user2RandomID.password = bcryptjs.hashSync("dishwasher-funk", 10);
     const user = checkExistedPassword("dishwasher-funk", testUsers);
     const expectedUserId = "user2RandomID";
     assert.strictEqual(user, expectedUserId);

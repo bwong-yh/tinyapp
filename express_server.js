@@ -1,19 +1,23 @@
 // DATABASE
+
 const urlDatabase = {
   b2xVn2: { longURL: "http://www.lighthouselabs.ca", userId: "9sm5xK" },
   // "9sm5xK": "http://www.google.com",
 };
-
 const users = {};
 
 // essential functions
+
 const { urlsForUser, checkExistedUrl, checkIsOwner, generateRandomString, checkExistedId, checkExistedEmail, checkExistedPassword, renderErrorPage } = require("./helpers");
+
+// server setup
 
 const express = require("express");
 const bodyParser = require("body-parser");
 const methodOverride = require("method-override");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const { format } = require("date-fns");
 
 const app = express();
 const PORT = 8080;
@@ -28,7 +32,8 @@ app.use(
   })
 );
 
-// SERVER ENDPOINTS
+// GET routes
+
 app.get("/", (req, res) => {
   res.redirect("/login");
 });
@@ -59,23 +64,37 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
-  const visits = urlDatabase[req.params.shortURL].visits;
+  const createdAt = format(urlDatabase[req.params.shortURL].created, "MMM d, yyyy");
+  const uniqueVisitors = urlDatabase[req.params.shortURL].visitorIds.length;
+  const { longURL, visits } = urlDatabase[req.params.shortURL];
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
-    renderErrorPage(res, 401, "Please log in to continue");
+    renderErrorPage(res, 401, "Please log in to continue.");
   } else if (!checkExistedUrl(shortURL, urlDatabase)) {
-    renderErrorPage(res, 400, "Please check ShortURL");
+    renderErrorPage(res, 404, "TinyURL does not exist.");
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
-    renderErrorPage(res, 403, "You are not the owner");
+    renderErrorPage(res, 403, "You are authorized to access this page.");
   } else {
-    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id], visits };
+    const templateVars = { user: users[req.session.user_id], shortURL, longURL, visits, uniqueVisitors, createdAt };
     res.render("urls_show", templateVars);
   }
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  // add 1 to the shortURL obj when this route is accessed
+  const shortURL = req.params.shortURL;
+
+  if (!checkExistedUrl(shortURL, urlDatabase)) {
+    renderErrorPage(res, 400, "TinyURL does not exist.");
+  } else if (!req.session.user_id) {
+    // create id for unknown/new visitors
+    req.session.user_id = generateRandomString();
+  }
+
+  urlDatabase[shortURL].visitorIds.push(req.session.user_id);
+  // filter out duplicate ids
+  urlDatabase[shortURL].visitorIds = [...new Set(urlDatabase[shortURL].visitorIds)];
+  urlDatabase[shortURL].visitHistory.push(new Date());
   urlDatabase[req.params.shortURL].visits++;
   res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
@@ -86,12 +105,12 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
 
   if (!email || !password) {
-    renderErrorPage(res, 400, "Please check your email and password");
+    renderErrorPage(res, 400, "Please check your email and password.");
   }
 
   // allow registration if email is not in the databse (users obj)
   if (checkExistedEmail(email, users)) {
-    renderErrorPage(res, 400, "Email is already registered");
+    renderErrorPage(res, 400, "Email is already registered.");
   } else {
     users[id] = { id, email, password: bcrypt.hashSync(password, 10) };
     req.session.user_id = id;
@@ -99,17 +118,19 @@ app.post("/register", (req, res) => {
   }
 });
 
+// POST routes
+
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
   if (!checkExistedEmail(email, users)) {
-    renderErrorPage(res, 403, "Email cannot be found");
+    renderErrorPage(res, 403, "Email cannot be found.");
   }
 
   // allow logging in ONLY if both functions return the same userId
   if (checkExistedEmail(email, users) !== checkExistedPassword(password, users)) {
-    renderErrorPage(res, 403, "Email and password do not match");
+    renderErrorPage(res, 403, "Email and password do not match.");
   } else {
     // res.cookie("user_id", checkExistedEmail(email, users));
     req.session.user_id = checkExistedEmail(email, users);
@@ -125,13 +146,13 @@ app.post("/logout", (req, res) => {
 app.post("/urls", (req, res) => {
   // only registered userId can access to this endpoint
   if (!checkExistedId(req.session.user_id, users)) {
-    renderErrorPage(res, 401, "You are unauthorized!");
+    renderErrorPage(res, 401, "You are unauthorized to perform this action!");
   } else {
     const userId = req.session.user_id;
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
 
-    urlDatabase[shortURL] = { longURL, userId, visits: 0 };
+    urlDatabase[shortURL] = { longURL, userId, visits: 0, visitorIds: [], visitHistory: [], created: new Date() };
     res.redirect("/urls");
   }
 });
@@ -142,7 +163,7 @@ app.delete("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (!checkIsOwner(userId, shortURL, urlDatabase)) {
-    renderErrorPage(res, 403, "You are not the owner");
+    renderErrorPage(res, 403, "You are unauthorized to delete this URL.");
   } else {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
@@ -154,7 +175,7 @@ app.put("/urls/:shortURL/edit", (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (!checkIsOwner(userId, shortURL, urlDatabase)) {
-    renderErrorPage(res, 403, "You are not the owner");
+    renderErrorPage(res, 403, "You are unauthorized to access this page.");
   } else {
     res.redirect(`/urls/${req.params.shortURL}`);
   }
@@ -165,12 +186,13 @@ app.put("/urls/:shortURL/update", (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (!checkIsOwner(userId, shortURL, urlDatabase)) {
-    renderErrorPage(res, 403, "You are not the owner");
+    renderErrorPage(res, 403, "You are unauthorized to update this URL.");
   } else {
     const shortURL = req.params.shortURL;
 
     // visits reset to 0 if longURL is changed
     urlDatabase[shortURL].visits = 0;
+    urlDatabase[shortURL].visitorIds.length = 0;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   }
