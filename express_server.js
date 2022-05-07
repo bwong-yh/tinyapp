@@ -64,9 +64,11 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
-  const createdAt = format(urlDatabase[req.params.shortURL].created, "MMM d, yyyy");
-  const uniqueVisitors = urlDatabase[req.params.shortURL].visitorIds.length;
-  const { longURL, visits } = urlDatabase[req.params.shortURL];
+  const uniqueVisitors = urlDatabase[shortURL].uniqueVisitorIds.size;
+  const createdAt = format(urlDatabase[shortURL].created, "MMM d, yyyy");
+  const { longURL, visits } = urlDatabase[shortURL];
+
+  console.log(urlDatabase[shortURL].uniqueVisitorIds);
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
@@ -83,6 +85,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
+  const userId = req.session.user_id;
 
   if (!checkExistedUrl(shortURL, urlDatabase)) {
     renderErrorPage(res, 400, "TinyURL does not exist.");
@@ -91,12 +94,11 @@ app.get("/u/:shortURL", (req, res) => {
     req.session.user_id = generateRandomString();
   }
 
-  urlDatabase[shortURL].visitorIds.push(req.session.user_id);
-  // filter out duplicate ids
-  urlDatabase[shortURL].visitorIds = [...new Set(urlDatabase[shortURL].visitorIds)];
+  urlDatabase[shortURL].visitorIds.push(userId);
+  urlDatabase[shortURL].uniqueVisitorIds.add(userId);
   urlDatabase[shortURL].visitHistory.push(new Date());
-  urlDatabase[req.params.shortURL].visits++;
-  res.redirect(urlDatabase[req.params.shortURL].longURL);
+  urlDatabase[shortURL].visits++;
+  res.redirect(urlDatabase[shortURL].longURL);
 });
 
 app.post("/register", (req, res) => {
@@ -152,7 +154,7 @@ app.post("/urls", (req, res) => {
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
 
-    urlDatabase[shortURL] = { longURL, userId, visits: 0, visitorIds: [], visitHistory: [], created: new Date() };
+    urlDatabase[shortURL] = { longURL, userId, visits: 0, visitorIds: [], uniqueVisitorIds: new Set(), visitHistory: [], created: new Date() };
     res.redirect("/urls");
   }
 });
