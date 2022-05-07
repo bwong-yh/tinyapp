@@ -197,6 +197,7 @@ app.put("/urls/:shortURL/update", (req, res) => {
     // visits reset to 0 if longURL is changed
     urlDatabase[shortURL].visits = 0;
     urlDatabase[shortURL].visitorIds.length = 0;
+    urlDatabase[shortURL].uniqueVisitorIds.clear();
     urlDatabase[shortURL].visitHistory.length = 0;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
