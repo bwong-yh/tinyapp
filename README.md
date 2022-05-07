@@ -19,9 +19,9 @@ A web application that is written with Node.js and Express.js to allow users to 
 
 7. once logged in, it will prompt you the the homepage
    ![homepage](./images/homepage.png)
-8. click on `Create New URL` to nagivate to create page
+8. click on `Create New URL` to nagivate to create new shortened URL
    ![create-url](./images/create-url.png)
-9. Once new URL is added, you will be prompt back to the homepage to view / modify the URL
+9. once new URL is added, you will be prompt back to the homepage to view / modify the URL
    ![homepage-added](./images/homepage-added.png)
 10. enter `CTRL + c` or `⌘ + c` to end server (whenever you want)
 
