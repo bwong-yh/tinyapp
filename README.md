@@ -1,6 +1,6 @@
 # tinyapp
 
-A web application that is written by Node.js and Express.js to allow users to shorten long URLs.
+A web application that is written with Node.js and Express.js to allow users to shorten long URLs.
 
 ## Getting started
 
