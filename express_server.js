@@ -59,6 +59,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
+  const visits = urlDatabase[req.params.shortURL].visits;
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
@@ -68,12 +69,14 @@ app.get("/urls/:shortURL", (req, res) => {
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
   } else {
-    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id], visits };
     res.render("urls_show", templateVars);
   }
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  // add 1 to the shortURL obj when this route is accessed
+  urlDatabase[req.params.shortURL].visits++;
   res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
@@ -105,12 +108,12 @@ app.post("/login", (req, res) => {
   }
 
   // allow logging in ONLY if both functions return the same userId
-  if (checkExistedEmail(email, users) === checkExistedPassword(password, users)) {
+  if (checkExistedEmail(email, users) !== checkExistedPassword(password, users)) {
+    renderErrorPage(res, 403, "Email and password do not match");
+  } else {
     // res.cookie("user_id", checkExistedEmail(email, users));
     req.session.user_id = checkExistedEmail(email, users);
     res.redirect("/urls");
-  } else {
-    renderErrorPage(res, 403, "Email and password do not match");
   }
 });
 
@@ -121,15 +124,15 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls", (req, res) => {
   // only registered userId can access to this endpoint
-  if (checkExistedId(req.session.user_id, users)) {
+  if (!checkExistedId(req.session.user_id, users)) {
+    renderErrorPage(res, 401, "You are unauthorized!");
+  } else {
     const userId = req.session.user_id;
     const shortURL = generateRandomString();
     const longURL = req.body.longURL;
 
-    urlDatabase[shortURL] = { longURL, userId };
+    urlDatabase[shortURL] = { longURL, userId, visits: 0 };
     res.redirect("/urls");
-  } else {
-    renderErrorPage(res, 401, "You are unauthorized!");
   }
 });
 
@@ -138,11 +141,11 @@ app.delete("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
-  if (checkIsOwner(userId, shortURL, urlDatabase)) {
+  if (!checkIsOwner(userId, shortURL, urlDatabase)) {
+    renderErrorPage(res, 403, "You are not the owner");
+  } else {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
-  } else {
-    renderErrorPage(res, 403, "You are not the owner");
   }
 });
 
@@ -150,10 +153,10 @@ app.put("/urls/:shortURL/edit", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
-  if (checkIsOwner(userId, shortURL, urlDatabase)) {
-    res.redirect(`/urls/${req.params.shortURL}`);
-  } else {
+  if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
+  } else {
+    res.redirect(`/urls/${req.params.shortURL}`);
   }
 });
 
@@ -161,11 +164,11 @@ app.put("/urls/:shortURL/update", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
 
-  if (checkIsOwner(userId, shortURL, urlDatabase)) {
+  if (!checkIsOwner(userId, shortURL, urlDatabase)) {
+    renderErrorPage(res, 403, "You are not the owner");
+  } else {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
-  } else {
-    renderErrorPage(res, 403, "You are not the owner");
   }
 });
 
