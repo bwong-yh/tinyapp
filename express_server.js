@@ -167,7 +167,11 @@ app.put("/urls/:shortURL/update", (req, res) => {
   if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are not the owner");
   } else {
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    const shortURL = req.params.shortURL;
+
+    // visits reset to 0 if longURL is changed
+    urlDatabase[shortURL].visits = 0;
+    urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   }
 });
