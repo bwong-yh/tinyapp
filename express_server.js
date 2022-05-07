@@ -64,13 +64,6 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
-  const uniqueVisitors = urlDatabase[shortURL].uniqueVisitorIds.size;
-  const createdAt = format(urlDatabase[shortURL].created, "MMM d, yyyy");
-  const { longURL, visits } = urlDatabase[shortURL];
-
-  // format last visit date
-  let lastVisit = urlDatabase[shortURL].visitHistory.slice(-1)[0];
-  lastVisit = !lastVisit ? "---" : format(lastVisit, "MMM d, yyyy 'at' HH:mm");
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
@@ -80,7 +73,15 @@ app.get("/urls/:shortURL", (req, res) => {
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are authorized to access this page.");
   } else {
-    const templateVars = { user: users[req.session.user_id], shortURL, longURL, visits, uniqueVisitors, lastVisit, createdAt };
+    const uniqueVisitors = urlDatabase[shortURL].uniqueVisitorIds.size;
+    const { longURL, visits } = urlDatabase[shortURL];
+
+    // format date
+    const createdAt = format(urlDatabase[shortURL].created, "MMM d, yyyy");
+    let lastVisit = urlDatabase[shortURL].visitHistory.slice(-1)[0];
+    lastVisit = !lastVisit ? "---" : format(lastVisit, "MMM d, yyyy 'at' HH:mm");
+
+    const templateVars = { user: users[req.session.user_id], shortURL, longURL, createdAt, visits, uniqueVisitors, lastVisit };
     res.render("urls_show", templateVars);
   }
 });
@@ -90,7 +91,7 @@ app.get("/u/:shortURL", (req, res) => {
   const userId = req.session.user_id;
 
   if (!checkExistedUrl(shortURL, urlDatabase)) {
-    renderErrorPage(res, 400, "TinyURL does not exist.");
+    renderErrorPage(res, 404, "TinyURL does not exist.");
   } else if (!req.session.user_id) {
     // create id for unknown/new visitors
     req.session.user_id = generateRandomString();
