@@ -68,7 +68,9 @@ app.get("/urls/:shortURL", (req, res) => {
   const createdAt = format(urlDatabase[shortURL].created, "MMM d, yyyy");
   const { longURL, visits } = urlDatabase[shortURL];
 
-  console.log(urlDatabase[shortURL].uniqueVisitorIds);
+  // format last visit date
+  let lastVisit = urlDatabase[shortURL].visitHistory.slice(-1)[0];
+  lastVisit = !lastVisit ? "---" : format(lastVisit, "MMM d, yyyy 'at' HH:mm");
 
   // allow access ONLY if shortURL is correct, user is logged in, and user is the owner of the URLs
   if (!userId) {
@@ -78,7 +80,7 @@ app.get("/urls/:shortURL", (req, res) => {
   } else if (!checkIsOwner(userId, shortURL, urlDatabase)) {
     renderErrorPage(res, 403, "You are authorized to access this page.");
   } else {
-    const templateVars = { user: users[req.session.user_id], shortURL, longURL, visits, uniqueVisitors, createdAt };
+    const templateVars = { user: users[req.session.user_id], shortURL, longURL, visits, uniqueVisitors, lastVisit, createdAt };
     res.render("urls_show", templateVars);
   }
 });
@@ -195,6 +197,7 @@ app.put("/urls/:shortURL/update", (req, res) => {
     // visits reset to 0 if longURL is changed
     urlDatabase[shortURL].visits = 0;
     urlDatabase[shortURL].visitorIds.length = 0;
+    urlDatabase[shortURL].visitHistory.length = 0;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   }
